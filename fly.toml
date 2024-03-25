@@ -21,12 +21,13 @@ kill_timeout = '5s'
   min_machines_running = 1
   processes = ['app']
 
-[[http_service.tcp_checks]]
+[[http_service.checks]]
     interval = '15s'
     timeout = '2s'
     grace_period = '10s'
     method = 'GET'
     path = '/'
+    type = 'http'
 
 [mounts]
   source = "hc_data"
