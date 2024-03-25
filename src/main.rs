@@ -2,6 +2,8 @@
 
 use std::{
 	collections::HashMap,
+	io::Seek,
+	str::FromStr,
 	sync::{Arc, Mutex},
 	time::Duration,
 };
@@ -37,9 +39,10 @@ fn main() {
 
 	let server = Server::http("0.0.0.0:8080").unwrap();
 	// println!("listening...");
+	let jpg_content_type = vec![tiny_http::Header::from_str("Content-Type: image/jpg").unwrap()];
 
 	for request in server.incoming_requests() {
-        let url = request.url().split("?").next().unwrap();
+		let url = request.url().split("?").next().unwrap();
 		if url == "/" {
 			let _ = request.respond(Response::from_string(""));
 			continue;
@@ -79,9 +82,12 @@ fn main() {
 			count % 1000
 		);
 		let new_image = draw_text(&image, Rgb([255, 255, 255]), 0, 0, 14.0, &font, &text);
+
 		let mut cursor = std::io::Cursor::new(vec![]);
 		if let Ok(_) = new_image.write_to(&mut cursor, ImageFormat::Jpeg) {
-			let _ = request.respond(Response::from_data(cursor.into_inner()));
+			let _ = cursor.seek(std::io::SeekFrom::Start(0)); // necessary?
+			let resp = Response::new(tiny_http::StatusCode(200), jpg_content_type.clone(), cursor, None, None);
+			let _ = request.respond(resp);
 		} else {
 			let _ = request.respond(Response::from_string("failed"));
 		}
