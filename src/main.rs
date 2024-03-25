@@ -57,7 +57,8 @@ fn main() {
 		// "/hc/69.jpg"
 		// "/hc/ksf.jpg"
 		// "/hc/czar.jpg"
-		if url.len() > 20 {
+        // "/hc/maps_ksfthings.jpg"
+		if url.len() > 30 {
 			let _ = request.respond(Response::from_string("too big"));
 			continue;
 		}
