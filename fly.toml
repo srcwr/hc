@@ -16,10 +16,17 @@ kill_timeout = '5s'
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = true
-  auto_start_machines = true
-  min_machines_running = 0
+  auto_stop_machines = false
+  auto_start_machines = false
+  min_machines_running = 1
   processes = ['app']
+
+[[http_service.tcp_checks]]
+    interval = '15s'
+    timeout = '2s'
+    grace_period = '10s'
+    method = 'GET'
+    path = '/'
 
 [mounts]
   source = "hc_data"
@@ -37,11 +44,6 @@ kill_timeout = '5s'
 [[services.ports]]
     port = 443
     handlers = ['tls', 'http']
-
-[[services.tcp_checks]]
-    interval = '15s'
-    timeout = '2s'
-    grace_period = '1s'
 
 [[vm]]
   memory = '256mb'
