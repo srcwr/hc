@@ -44,7 +44,7 @@ fn main() {
 	for request in server.incoming_requests() {
 		let url = request.url().split("?").next().unwrap();
 		if url == "/" {
-			let _ = request.respond(Response::from_string(""));
+			let _ = request.respond(Response::from_string("https://github.com/srcwr/hc"));
 			continue;
 		}
 		if !url.starts_with("/hc/") || !url.ends_with(".jpg") {
