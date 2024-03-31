@@ -20,6 +20,10 @@ kill_timeout = '5s'
   auto_start_machines = false
   min_machines_running = 1
   processes = ['app']
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 200
+    hard_limit = 250
 
 [[http_service.checks]]
     interval = '15s'

@@ -12,10 +12,12 @@ use imageproc::{
 	drawing::draw_text,
 	image::{ImageFormat, Rgb, RgbImage},
 };
-use tiny_http::{Response, Server};
+use rand::Rng;
+use tiny_http::{Response, Server, StatusCode};
 
 fn main() {
 	let db_path = if false { "fuck.json" } else { "/data/fuck.json" };
+	let dump_secret = std::env::var("DUMP_SECRET").unwrap_or_else(|_| "test".into());
 
 	let mut image = RgbImage::new(92, 14);
 	image.fill(0); // set to black
@@ -30,7 +32,7 @@ fn main() {
 	std::thread::spawn(move || {
 		loop {
 			std::thread::sleep(Duration::from_secs(60));
-			let hit_count = backup_hit_count.lock().unwrap().clone();
+			let hit_count = { backup_hit_count.lock().unwrap().clone() };
 			let v = serde_json::to_string(&hit_count).unwrap();
 			let _ = std::fs::write(db_path, &v);
 			// println!("{}", v);
@@ -41,10 +43,25 @@ fn main() {
 	// println!("listening...");
 	let jpg_content_type = vec![tiny_http::Header::from_str("Content-Type: image/jpg").unwrap()];
 
+	// look into cloudflare's hotlink protection
+	let blocked = Response::new(StatusCode(403), vec![], std::io::Cursor::new(""), None, None);
+
 	for request in server.incoming_requests() {
 		let url = request.url().split("?").next().unwrap();
 		if url == "/" {
 			let _ = request.respond(Response::from_string("https://github.com/srcwr/hc"));
+			continue;
+		}
+		if request.url().starts_with("/dump.json") {
+			if let Some(secret) = request.url().split('=').skip(1).next() {
+				std::thread::sleep(Duration::from_micros(rand::thread_rng().gen_range(500..999)));
+				if secret == dump_secret {
+					let hit_count = { hit_count.lock().unwrap().clone() };
+					let _ = request.respond(Response::from_string(serde_json::to_string(&hit_count).unwrap()));
+				} else {
+					let _ = request.respond(Response::from_string(""));
+				}
+			}
 			continue;
 		}
 		if !url.starts_with("/hc/") || !url.ends_with(".jpg") {
@@ -57,7 +74,7 @@ fn main() {
 		// "/hc/69.jpg"
 		// "/hc/ksf.jpg"
 		// "/hc/czar.jpg"
-        // "/hc/maps_ksfthings.jpg"
+		// "/hc/maps_ksfthings.jpg"
 		if url.len() > 30 {
 			let _ = request.respond(Response::from_string("too big"));
 			continue;
@@ -87,7 +104,7 @@ fn main() {
 		let mut cursor = std::io::Cursor::new(vec![]);
 		if let Ok(_) = new_image.write_to(&mut cursor, ImageFormat::Jpeg) {
 			let _ = cursor.seek(std::io::SeekFrom::Start(0)); // necessary?
-			let resp = Response::new(tiny_http::StatusCode(200), jpg_content_type.clone(), cursor, None, None);
+			let resp = Response::new(StatusCode(200), jpg_content_type.clone(), cursor, None, None);
 			let _ = request.respond(resp);
 		} else {
 			let _ = request.respond(Response::from_string("failed"));
