@@ -52,7 +52,7 @@ fn main() {
 			let _ = request.respond(Response::from_string("https://github.com/srcwr/hc"));
 			continue;
 		}
-		if request.url().starts_with("/dump.json") {
+		if request.url().starts_with("/dump.json?key=") {
 			if let Some(secret) = request.url().split('=').skip(1).next() {
 				std::thread::sleep(Duration::from_micros(rand::thread_rng().gen_range(500..999)));
 				if secret == dump_secret {
