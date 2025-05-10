@@ -54,7 +54,8 @@ fn main() {
 		}
 		if request.url().starts_with("/dump.json?key=") {
 			if let Some(secret) = request.url().split('=').nth(1) {
-				std::thread::sleep(Duration::from_micros(rand::thread_rng().gen_range(500..999)));
+				// random sleep to prevent timing attacks on the secret 🕵️‍♀️
+				std::thread::sleep(Duration::from_micros(rand::thread_rng().gen_range(500..1999)));
 				if secret == dump_secret {
 					let hit_count = { hit_count.lock().unwrap().clone() };
 					let _ = request.respond(Response::from_string(serde_json::to_string(&hit_count).unwrap()));
