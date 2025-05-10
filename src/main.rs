@@ -16,7 +16,12 @@ use rand::Rng;
 use tiny_http::{Response, Server, StatusCode};
 
 fn main() {
-	let db_path = if false { "fuck.json" } else { "/data/fuck.json" };
+	let db_path = if std::env::var_os("FLY_APP_NAME").is_none() {
+		"fuck.json"
+	} else {
+		"/data/fuck.json"
+	};
+
 	let dump_secret = std::env::var("DUMP_SECRET").unwrap_or_else(|_| "test".into());
 
 	let mut image = RgbImage::new(92, 14);
