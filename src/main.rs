@@ -36,7 +36,7 @@ fn main() {
 	let backup_hit_count = hit_count.clone();
 	std::thread::spawn(move || {
 		loop {
-			std::thread::sleep(Duration::from_secs(60));
+			std::thread::sleep(Duration::from_secs(300));
 			let hit_count = { backup_hit_count.lock().unwrap().clone() };
 			let v = serde_json::to_string(&hit_count).unwrap();
 			let _ = std::fs::write(db_path, &v);
