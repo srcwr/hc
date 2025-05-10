@@ -53,7 +53,7 @@ fn main() {
 			continue;
 		}
 		if request.url().starts_with("/dump.json?key=") {
-			if let Some(secret) = request.url().split('=').skip(1).next() {
+			if let Some(secret) = request.url().split('=').nth(1) {
 				std::thread::sleep(Duration::from_micros(rand::thread_rng().gen_range(500..999)));
 				if secret == dump_secret {
 					let hit_count = { hit_count.lock().unwrap().clone() };
@@ -102,7 +102,7 @@ fn main() {
 		let new_image = draw_text(&image, Rgb([255, 255, 255]), 0, 0, 14.0, &font, &text);
 
 		let mut cursor = std::io::Cursor::new(vec![]);
-		if let Ok(_) = new_image.write_to(&mut cursor, ImageFormat::Jpeg) {
+		if new_image.write_to(&mut cursor, ImageFormat::Jpeg).is_ok() {
 			let _ = cursor.seek(std::io::SeekFrom::Start(0)); // necessary?
 			let resp = Response::new(StatusCode(200), jpg_content_type.clone(), cursor, None, None);
 			let _ = request.respond(resp);
