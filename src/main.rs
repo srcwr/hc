@@ -47,6 +47,13 @@ fn main() {
 
 	for request in server.incoming_requests() {
 		if request.url().len() > 100 {
+			let _ = request.respond(Response::new(
+				StatusCode(403),
+				vec![],
+				std::io::Cursor::new("url too long"),
+				None,
+				None,
+			));
 			continue;
 		}
 
@@ -70,7 +77,7 @@ fn main() {
 			let _ = request.respond(Response::new(
 				StatusCode(403),
 				vec![],
-				std::io::Cursor::new(""),
+				std::io::Cursor::new("invalid referer"),
 				None,
 				None,
 			));
@@ -78,11 +85,11 @@ fn main() {
 		}
 
 		let Some(thing) = request.url().strip_prefix("/hc/") else {
-			let _ = request.respond(Response::from_string(""));
+			let _ = request.respond(Response::from_string("invalid url"));
 			continue;
 		};
 		let Some(thing) = thing.strip_suffix(".jpg") else {
-			let _ = request.respond(Response::from_string(""));
+			let _ = request.respond(Response::from_string("invalid url"));
 			continue;
 		};
 
@@ -111,7 +118,7 @@ fn main() {
 			let resp = Response::new(StatusCode(200), jpg_content_type.clone(), cursor, None, None);
 			let _ = request.respond(resp);
 		} else {
-			let _ = request.respond(Response::from_string("failed"));
+			let _ = request.respond(Response::from_string("failed to generate image"));
 		}
 	}
 }
