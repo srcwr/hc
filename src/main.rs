@@ -67,6 +67,15 @@ fn main() {
 			continue;
 		}
 
+		let Some(thing) = request.url().strip_prefix("/hc/") else {
+			let _ = request.respond(Response::from_string("invalid url"));
+			continue;
+		};
+		let Some(thing) = thing.strip_suffix(".jpg") else {
+			let _ = request.respond(Response::from_string("invalid url"));
+			continue;
+		};
+
 		if let Some(referer) = request.headers().iter().find(|h| h.field.equiv("referer"))
 			&& let Ok(referer) = referer.value.as_str().parse::<url::Url>()
 			&& let Some(host) = referer.domain()
@@ -86,22 +95,13 @@ fn main() {
 			}
 		}
 
-		let Some(thing) = request.url().strip_prefix("/hc/") else {
-			let _ = request.respond(Response::from_string("invalid url"));
-			continue;
-		};
-		let Some(thing) = thing.strip_suffix(".jpg") else {
-			let _ = request.respond(Response::from_string("invalid url"));
-			continue;
-		};
-
 		let count = {
 			let mut hit_count = hit_count.lock().unwrap();
 			if let Some(v) = hit_count.get_mut(thing) {
 				*v += 1;
 				*v
 			} else {
-				let _ = request.respond(Response::from_string(""));
+				let _ = request.respond(Response::from_string("unknown page"));
 				continue;
 			}
 		};
