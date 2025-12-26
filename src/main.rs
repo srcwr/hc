@@ -74,14 +74,16 @@ fn main() {
 		{
 			// yay!
 		} else {
-			let _ = request.respond(Response::new(
-				StatusCode(403),
-				vec![],
-				std::io::Cursor::new("invalid referer"),
-				None,
-				None,
-			));
-			continue;
+			if request.url() != "/hc/ghhc.jpg" {
+				let _ = request.respond(Response::new(
+					StatusCode(403),
+					vec![],
+					std::io::Cursor::new("invalid referer"),
+					None,
+					None,
+				));
+				continue;
+			}
 		}
 
 		let Some(thing) = request.url().strip_prefix("/hc/") else {
