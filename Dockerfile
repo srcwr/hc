@@ -1,6 +1,6 @@
 # stolen from https://github.com/fly-apps/hello-rust/blob/main/Dockerfile
 
-FROM rust:latest as builder
+FROM rust:latest AS builder
 
 WORKDIR /usr/src/app
 COPY . .
