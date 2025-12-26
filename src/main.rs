@@ -49,15 +49,12 @@ fn main() {
 		if request.url().len() > 100 {
 			continue;
 		}
-		let Ok(url) = request.url().parse::<url::Url>() else {
-			continue;
-		};
 
-		if url.path() == "/" {
+		if request.url() == "/" {
 			let _ = request.respond(Response::from_string("https://github.com/srcwr/hc"));
 			continue;
 		}
-		if url.path() == "/dump.json" {
+		if request.url() == "/dump.json" {
 			let hit_count = { hit_count.lock().unwrap().clone() };
 			let _ = request.respond(Response::from_string(serde_json::to_string(&hit_count).unwrap()));
 			continue;
@@ -80,7 +77,7 @@ fn main() {
 			continue;
 		}
 
-		let Some(thing) = url.path().strip_prefix("/hc/") else {
+		let Some(thing) = request.url().strip_prefix("/hc/") else {
 			let _ = request.respond(Response::from_string(""));
 			continue;
 		};
