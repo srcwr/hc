@@ -1,6 +1,6 @@
 # stolen from https://github.com/fly-apps/hello-rust/blob/main/Dockerfile
 
-FROM rust:1-bookworm as builder
+FROM rust:latest as builder
 
 WORKDIR /usr/src/app
 COPY . .
@@ -10,7 +10,7 @@ RUN --mount=type=cache,target=/usr/local/cargo,from=rust:latest,source=/usr/loca
     cargo build --release && mv ./target/release/fastdl-hc ./hc
 
 # Runtime image
-FROM debian:bookworm-slim
+FROM debian:stable-slim
 
 # Run as "app" user
 RUN useradd -ms /bin/bash app

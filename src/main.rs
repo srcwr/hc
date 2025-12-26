@@ -12,7 +12,6 @@ use imageproc::{
 	drawing::draw_text,
 	image::{ImageFormat, Rgb, RgbImage},
 };
-use rand::Rng;
 use tiny_http::{Response, Server, StatusCode};
 
 fn main() {
@@ -21,8 +20,6 @@ fn main() {
 	} else {
 		"/data/fuck.json"
 	};
-
-	let dump_secret = std::env::var("DUMP_SECRET").unwrap_or_else(|_| "test".into());
 
 	let mut image = RgbImage::new(92, 14);
 	image.fill(0); // set to black
@@ -48,55 +45,59 @@ fn main() {
 	// println!("listening...");
 	let jpg_content_type = vec![tiny_http::Header::from_str("Content-Type: image/jpg").unwrap()];
 
-	// look into cloudflare's hotlink protection
-	let blocked = Response::new(StatusCode(403), vec![], std::io::Cursor::new(""), None, None);
-
 	for request in server.incoming_requests() {
-		let url = request.url().split("?").next().unwrap();
-		if url == "/" {
+		if request.url().len() > 100 {
+			continue;
+		}
+		let Ok(url) = request.url().parse::<url::Url>() else {
+			continue;
+		};
+
+		if url.path() == "/" {
 			let _ = request.respond(Response::from_string("https://github.com/srcwr/hc"));
 			continue;
 		}
-		if request.url().starts_with("/dump.json?key=") {
-			if let Some(secret) = request.url().split('=').nth(1) {
-				// random sleep to prevent timing attacks on the secret 🕵️‍♀️
-				std::thread::sleep(Duration::from_micros(rand::thread_rng().gen_range(500..1999)));
-				if secret == dump_secret {
-					let hit_count = { hit_count.lock().unwrap().clone() };
-					let _ = request.respond(Response::from_string(serde_json::to_string(&hit_count).unwrap()));
-				} else {
-					let _ = request.respond(Response::from_string(""));
-				}
-			}
-			continue;
-		}
-		if !url.starts_with("/hc/") || !url.ends_with(".jpg") {
-			let _ = request.respond(Response::from_string(""));
-			continue;
-		}
-		// "/hc/home.jpg"
-		// "/hc/maps.jpg"
-		// "/hc/hashed.jpg"
-		// "/hc/69.jpg"
-		// "/hc/ksf.jpg"
-		// "/hc/czar.jpg"
-		// "/hc/maps_ksfthings.jpg"
-		if url.len() > 30 {
-			let _ = request.respond(Response::from_string("too big"));
+		if url.path() == "/dump.json" {
+			let hit_count = { hit_count.lock().unwrap().clone() };
+			let _ = request.respond(Response::from_string(serde_json::to_string(&hit_count).unwrap()));
 			continue;
 		}
 
-		let thing = url[4..url.len() - 4].to_ascii_lowercase();
-		if thing.is_empty() {
+		if let Some(referer) = request.headers().iter().find(|h| h.field.equiv("referer"))
+			&& let Ok(referer) = referer.value.as_str().parse::<url::Url>()
+			&& let Some(host) = referer.domain()
+			&& host.to_lowercase().ends_with("fastdl.me")
+		{
+			// yay!
+		} else {
+			let _ = request.respond(Response::new(
+				StatusCode(403),
+				vec![],
+				std::io::Cursor::new(""),
+				None,
+				None,
+			));
 			continue;
 		}
-		// println!("{}", thing);
+
+		let Some(thing) = url.path().strip_prefix("/hc/") else {
+			let _ = request.respond(Response::from_string(""));
+			continue;
+		};
+		let Some(thing) = thing.strip_suffix(".jpg") else {
+			let _ = request.respond(Response::from_string(""));
+			continue;
+		};
 
 		let count = {
 			let mut hit_count = hit_count.lock().unwrap();
-			let entry = hit_count.entry(thing).or_default();
-			*entry += 1;
-			*entry
+			if let Some(v) = hit_count.get_mut(thing) {
+				*v += 1;
+				*v
+			} else {
+				let _ = request.respond(Response::from_string(""));
+				continue;
+			}
 		};
 
 		let text = format!(

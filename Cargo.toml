@@ -5,12 +5,13 @@ edition = "2024"
 
 [dependencies]
 ab_glyph = "0.2"
+idna_adapter = "=1.0.0" # locked to 1.0.0 to prevent pulling in a ton of unicode bullshit
 image = { version = "*", default-features = false, features = ["jpeg"] }
 imageproc = { version = "0.25", default-features = false }
-rand = "0.8.5"
 serde = "1"
 serde_json = "1"
 tiny_http = "0.12"
+url = "2.5.7"
 
 [profile.release]
 lto = true
