@@ -6,7 +6,8 @@ services:
     environment:
       - TUNNEL_TOKEN=${TUNNEL_TOKEN}
   hc:
-    build: .
+    #build: .
+    image: ghcr.io/srcwr/hc:latest
     restart: unless-stopped
     stop_grace_period: 2s
     volumes:
